@@ -50,6 +50,16 @@ namespace Wobble.Tests.Screens.Tests.SpriteTextPlusNew
 
             cyrillic.AddBorder(Color.Cyan, 2);
 
+            var links = new SpriteTextPlus(Font, "Click the link https://quavergame.com! [Quaver Website](https://quavergame.com)!!!", 24)
+            {
+                Parent = Container,
+                Alignment = Alignment.MidCenter,
+                Y = 50,
+                Tint = Color.Red
+            };
+            
+            links.AddBorder(Color.Aqua, 1);
+
             var ltr = new SpriteTextPlus(Font, "This text is aligned from\nleft to right", 22)
             {
                 Parent = Container,
