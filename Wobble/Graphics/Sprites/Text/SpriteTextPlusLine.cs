@@ -67,10 +67,10 @@ namespace Wobble.Graphics.Sprites.Text
         /// </summary>
         public string Text
         {
-            get => _raw.Text;
+            get => _raw.DisplayText;
             set
             {
-                _raw.Text = value;
+                _raw.DisplayText = value;
                 SetSize();
                 _dirty = true;
             }
