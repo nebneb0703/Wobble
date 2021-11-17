@@ -357,6 +357,9 @@ namespace Wobble.Graphics.Sprites.Text
 
         private void GenerateButton(LinkInfo link)
         {
+            if (generateLinkButtons == null)
+                return;
+            
             var x = link.Bounds.X;
             var y = link.Bounds.Y;
             var width = link.Bounds.Width;
