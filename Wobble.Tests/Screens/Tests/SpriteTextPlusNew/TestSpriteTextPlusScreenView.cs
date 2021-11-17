@@ -4,10 +4,13 @@ using FontStashSharp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SpriteFontPlus;
+using Wobble.Assets;
 using Wobble.Graphics;
 using Wobble.Graphics.Animations;
 using Wobble.Graphics.Sprites.Text;
+using Wobble.Graphics.UI.Buttons;
 using Wobble.Graphics.UI.Debugging;
+using Wobble.Logging;
 using Wobble.Managers;
 using Wobble.Screens;
 using Alignment = Wobble.Graphics.Alignment;
@@ -50,14 +53,29 @@ namespace Wobble.Tests.Screens.Tests.SpriteTextPlusNew
 
             cyrillic.AddBorder(Color.Cyan, 2);
 
-            var links = new SpriteTextPlus(Font, "Click the link https://quavergame.com! [Quaver Website](https://quavergame.com)!!!", 24)
+            Button generateButtons (LinkInfo link)
             {
+                EventHandler linkHandler = (sender, args) =>
+                {
+                    Logger.Debug($"Clicked {link.Url}", LogType.Runtime);
+                };
+
+                return new ImageButton(WobbleAssets.WhiteBox, linkHandler)
+                {
+                    Alpha = 0.5f,
+                };
+            }
+                
+            var links = new SpriteTextPlus(
+                Font, "Click the link to play the game: https://quavergame.com! [Source Code](https://github.com/Quaver/Quaver)!!!",
+                24, generateLinkButtons: generateButtons
+            ) {
                 Parent = Container,
                 Alignment = Alignment.MidCenter,
                 Y = 50,
-                Tint = Color.Red
+                Tint = Color.Red,
             };
-            
+
             links.AddBorder(Color.Aqua, 1);
 
             var ltr = new SpriteTextPlus(Font, "This text is aligned from\nleft to right", 22)
