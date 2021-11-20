@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Microsoft.Xna.Framework;
 using SpriteFontPlus;
 using Wobble.Graphics.Animations;
+using Wobble.Graphics.Sprites.Text.Formatting;
 using Wobble.Graphics.UI.Buttons;
 
 namespace Wobble.Graphics.Sprites.Text
@@ -46,22 +48,42 @@ namespace Wobble.Graphics.Sprites.Text
         }
 
         /// <summary>
-        ///     The text displayed for the font.
+        ///     The unformatted text of this SpriteTextPlus instance.
         /// </summary>
-        private string _text = "";
-        public string Text
+        private string _rawText = "";
+        public string RawText
         {
-            get => _text;
+            get => _rawText;
             set
             {
-                if (value == _text)
+                if (value == _rawText)
                     return;
 
-                _text = value ?? "";
+                _rawText = value ?? "";
+                
+                ParseText();
+            }
+        }
+
+        /// <summary>
+        ///     The formatted, display text to render.
+        /// </summary>
+        private string _displayText = "";
+        public string DisplayText
+        {
+            get => _displayText;
+            private set
+            {
+                if (value == _displayText)
+                    return;
+
+                _displayText = value ?? "";
 
                 RefreshText();
             }
         }
+        
+        private TextFragment[] Fragments { get; set; }
 
         /// <summary>
         ///     The tint this QuaverSprite will inherit.
@@ -74,18 +96,13 @@ namespace Wobble.Graphics.Sprites.Text
             {
                 _tint = value;
 
-                Children.ForEach(x =>
+                /*Children.ForEach(x =>
                 {
-                    // Don't carry over tint for link buttons.
-                    // TODO: maybe use something different because this is kinda gross and inefficient.
-                    if (linkButtons.Contains(x))
-                        return;
-                    
                     if (x is Sprite sprite)
                     {
                         sprite.Tint = value;
                     }
-                });
+                });*/
             }
         }
 
@@ -129,21 +146,6 @@ namespace Wobble.Graphics.Sprites.Text
         ///     However, you may want to turn caching off for text that frequently changes (ex. millisecond clocks/timers)
         /// </summary>
         public bool IsCached { get; }
-        
-        /// <summary>
-        ///     Data about links in this text object.
-        /// </summary>
-        public List<LinkInfo> Links { get; private set; } = new List<LinkInfo>();
-
-        /// <summary>
-        ///     Buttons for each link in the text.
-        /// </summary>
-        private List<Button> linkButtons = new List<Button>();
-
-        /// <summary>
-        ///     Function which initialises each link button drawable.
-        /// </summary>
-        private Func<LinkInfo, Button> generateLinkButtons;
 
         /// <summary>
         /// </summary>
@@ -151,20 +153,36 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="text"></param>
         /// <param name="size"></param>
         /// <param name="cache"></param>
-        /// <param name="generateLinkButtons">
-        /// Function to generate the button drawable behind links in the text.
-        /// You do not need to set the position, size or parent container for these buttons yourself.
-        /// </param>
-        public SpriteTextPlus(WobbleFontStore font, string text, int size = 0, bool cache = true, Func<LinkInfo, Button> generateLinkButtons = null)
+        public SpriteTextPlus(WobbleFontStore font, string text, int size = 0, bool cache = true)
         {
-            this.generateLinkButtons = generateLinkButtons;
-            
             Font = font;
-            Text = text;
+            RawText = text;
             IsCached = cache;
 
             FontSize = size == 0 ? Font.DefaultSize : size;
             SetChildrenAlpha = true;
+        }
+
+        private void ParseText()
+        {
+            Fragments = TextFormatter.Format(RawText);
+
+            var builder = new StringBuilder();
+            
+            BuildText(builder, Fragments);
+
+            DisplayText = builder.ToString();
+        }
+
+        void BuildText(StringBuilder builder, IEnumerable<TextFragment> fragments)
+        {
+            foreach(TextFragment fragment in fragments)
+            {
+                if (fragment is PlainTextFragment text)
+                    builder.Append(text.DisplayText);
+                else if(fragment.Inner.Count > 0)
+                    BuildText(builder, fragment.Inner);
+            }
         }
 
         /// <summary>
@@ -178,18 +196,13 @@ namespace Wobble.Graphics.Sprites.Text
                 SetSize();
                 return;
             }
-
-            for (var i = linkButtons.Count - 1; i >= 0; i--)
-                linkButtons[i].Destroy();
-            linkButtons.Clear();
-            Links.Clear();
             
             for (var i = Children.Count - 1; i >= 0; i--)
                 Children[i].Destroy();
 
             float width = 0, height = 0;
 
-            var lines = Text.Split('\n').ToList();
+            var lines = DisplayText.Split('\n').ToList();
             for (var lineIndex = 0; lineIndex < lines.Count; lineIndex++)
             {
                 var line = lines[lineIndex];
@@ -270,21 +283,6 @@ namespace Wobble.Graphics.Sprites.Text
                     var lineAfterSpace = line.Substring(nextLineStart.Value);
                     lines.Insert(lineIndex + 1, lineAfterSpace);
                 }
-
-                if (lineSprite.Links != null)
-                {
-                    for (int i = 0; i < lineSprite.Links.Length; i++)
-                    {
-                        var link = lineSprite.Links[i];
-                        // Update link y positions
-                        link.Bounds.Y = height;
-                        
-                        GenerateButton(link);
-                    }
-
-                    // Add links to list
-                    Links.AddRange(lineSprite.Links);
-                }
                 
                 lineSprite.Parent = this;
                 lineSprite.Alignment = ConvertTextAlignment();
@@ -302,18 +300,20 @@ namespace Wobble.Graphics.Sprites.Text
             Size = new ScalableVector2(width, height);
         }
 
+        // todo: uhhhhhhhhh
+        
         /// <summary>
         ///     Truncates the text with an elipsis according to <see cref="maxWidth"/>
         /// </summary>
         /// <param name="maxWidth"></param>
         public void TruncateWithEllipsis(int maxWidth)
         {
-            var originalText = Text;
+            var originalText = RawText;
 
             // Multi-line (MaxWidth) + Ellipis truncation
             if (Children.Count > 1 && Children.All(x => x is SpriteTextPlusLine))
             {
-                var text = Text;
+                var text = RawText;
 
                 Font.Store.Size = FontSize;
                 var totalWidth = Font.Store.MeasureString(text).X;
@@ -326,17 +326,17 @@ namespace Wobble.Graphics.Sprites.Text
                     totalWidth = Font.Store.MeasureString(text).X;
                 }
 
-                Text = text;
+                RawText = text;
             }
             // Single line truncation
             else
             {
                 while (Width > maxWidth)
-                    Text = Text.Substring(0, Text.Length - 1);
+                    RawText = RawText.Substring(0, RawText.Length - 1);
             }
 
-            if (Text != originalText)
-                Text += "...";
+            if (RawText != originalText)
+                RawText += "...";
         }
 
         public override void DrawToSpriteBatch()
@@ -345,49 +345,16 @@ namespace Wobble.Graphics.Sprites.Text
                 return;
 
             SetSize();
-            GameBase.Game.SpriteBatch.DrawString(Font.Store, Text, AbsolutePosition, _tint * Alpha);
+            GameBase.Game.SpriteBatch.DrawString(Font.Store, DisplayText, AbsolutePosition, _tint * Alpha);
         }
 
         private void SetSize()
         {
             Font.Store.Size = FontSize;
-            var (x, y) = Font.Store.MeasureString(Text);
+            var (x, y) = Font.Store.MeasureString(DisplayText);
             Size = new ScalableVector2(x, y);
         }
-
-        private void GenerateButton(LinkInfo link)
-        {
-            if (generateLinkButtons == null)
-                return;
-            
-            var x = link.Bounds.X;
-            var y = link.Bounds.Y;
-            var width = link.Bounds.Width;
-            var height = link.Bounds.Height;
-                        
-            // Generate buttons for links
-            var button = generateLinkButtons(link);
-                   
-            button.Parent = this;
-            button.Position = new ScalableVector2(x, y);
-            button.Size = new ScalableVector2(width, height);
-
-            linkButtons.Add(button);
-        }
-
-        public override void Update(GameTime gameTime)
-        {
-            base.Update(gameTime);
-
-            // If the link buttons are already cached, or there are no link buttons, return.
-            if (linkButtons.Count != 0 || Links.Count == 0)
-                return;
-            
-            // Otherwise, generate the buttons.
-            foreach(var link in Links)
-                GenerateButton(link);
-        }
-
+        
         /// <summary>
         /// </summary>
         /// <returns></returns>
