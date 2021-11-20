@@ -67,10 +67,10 @@ namespace Wobble.Graphics.Sprites.Text
         /// </summary>
         public string Text
         {
-            get => _raw.DisplayText;
+            get => _raw.Text;
             set
             {
-                _raw.RawText = value;
+                _raw.Text = value;
                 SetSize();
                 _dirty = true;
             }
@@ -81,11 +81,6 @@ namespace Wobble.Graphics.Sprites.Text
         /// </summary>
         private RenderTarget2D RenderTarget { get; set; }
 
-        /// <summary>
-        ///     An array of URL links present in the text.
-        /// </summary>
-        public LinkInfo[] Links { get => _raw.Links; } 
-        
         /// <summary>
         /// </summary>
         /// <param name="font"></param>
@@ -137,31 +132,6 @@ namespace Wobble.Graphics.Sprites.Text
 
             var flooredSize = new ScalableVector2((float) pixelWidth, (float) pixelHeight);
             Size = flooredSize / _scale;
-            
-            if (Links == null)
-                return;
-            
-            // Update links sizes
-            for (int i = 0; i < Links.Length; i++)
-            {
-                var link = Links[i];
-                var x = link.Bounds.X;
-                var y = link.Bounds.Y;
-                
-                width = link.Bounds.Width;
-                height = link.Bounds.Height;
-
-                var pixelX = Math.Ceiling(x);
-                var pixelY = Math.Ceiling(y);
-                pixelWidth = Math.Ceiling(width);
-                pixelHeight = Math.Ceiling(height);
-
-                var newPosition = new Point2((float)pixelX / _scale, (float)pixelY / _scale);
-                var newSize = new Size2((float)pixelWidth / _scale, (float)pixelHeight / _scale);
-
-                link.Bounds.Position = newPosition;
-                link.Bounds.Size = newSize;
-            }
         }
 
         /// <inheritdoc />

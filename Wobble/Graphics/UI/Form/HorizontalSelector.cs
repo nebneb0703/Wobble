@@ -131,7 +131,7 @@ namespace Wobble.Graphics.UI.Form
                     throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
             }
 
-            SelectedItemText.Text = Options[SelectedIndex];
+            SelectedItemText.RawText = Options[SelectedIndex];
             OnChange(Options[SelectedIndex], SelectedIndex);
         }
 
@@ -142,7 +142,7 @@ namespace Wobble.Graphics.UI.Form
         public void SelectIndex(int index)
         {
             SelectedIndex = index;
-            SelectedItemText.Text = Options[SelectedIndex];
+            SelectedItemText.RawText = Options[SelectedIndex];
         }
     }
 }

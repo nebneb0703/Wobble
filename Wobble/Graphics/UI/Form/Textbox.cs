@@ -60,12 +60,12 @@ namespace Wobble.Graphics.UI.Form
 
                 if (string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(PlaceholderText))
                 {
-                    InputText.Text = PlaceholderText;
+                    InputText.RawText = PlaceholderText;
                     InputText.Alpha = 0.50f;
                 }
                 else
                 {
-                    InputText.Text = value;
+                    InputText.RawText = value;
                     InputText.Alpha = 1;
                 }
             }
@@ -197,7 +197,7 @@ namespace Wobble.Graphics.UI.Form
                 RawText = initialText;
             else if (!string.IsNullOrEmpty(placeHolderText))
             {
-                InputText.Text = placeHolderText;
+                InputText.RawText = placeHolderText;
                 InputText.Alpha = 0.50f;
             }
 

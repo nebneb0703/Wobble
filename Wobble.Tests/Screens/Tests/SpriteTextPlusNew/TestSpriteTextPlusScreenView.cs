@@ -8,6 +8,7 @@ using Wobble.Assets;
 using Wobble.Graphics;
 using Wobble.Graphics.Animations;
 using Wobble.Graphics.Sprites.Text;
+using Wobble.Graphics.Sprites.Text.Formatting;
 using Wobble.Graphics.UI.Buttons;
 using Wobble.Graphics.UI.Debugging;
 using Wobble.Logging;
@@ -52,23 +53,10 @@ namespace Wobble.Tests.Screens.Tests.SpriteTextPlusNew
             };
 
             cyrillic.AddBorder(Color.Cyan, 2);
-
-            Button generateButtons (LinkInfo link)
-            {
-                EventHandler linkHandler = (sender, args) =>
-                {
-                    Logger.Debug($"Clicked {link.Url}", LogType.Runtime);
-                };
-
-                return new ImageButton(WobbleAssets.WhiteBox, linkHandler)
-                {
-                    Alpha = 0.5f,
-                };
-            }
-                
+            
             var links = new SpriteTextPlus(
                 Font, "Click the link to play the game: https://quavergame.com! [Source Code](https://github.com/Quaver/Quaver)!!!",
-                24, generateLinkButtons: generateButtons
+                24
             ) {
                 Parent = Container,
                 Alignment = Alignment.MidCenter,
