@@ -1,19 +1,25 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Wobble.Graphics.Sprites.Text.Formatting
 {
-    public class TextFragment
+    public abstract class TextFragment : ICloneable
+    {
+        public LinkedList<TextFragment> Inner { get; internal set; } = new LinkedList<TextFragment>();
+        
+        public object Clone() =>  MemberwiseClone();
+    }
+
+    public class UnparsedTextFragment : TextFragment
     {
         /// <summary>
-        ///     The raw text of the fragnment.
+        ///     The raw unparsed text of the component.
         /// </summary>
-        public string RawText { get; protected set; }
-        
-        public LinkedList<TextFragment> Inner { get; protected set; } = new LinkedList<TextFragment>();
-        
-        public TextFragment(string rawText)
+        public string RawText { get; internal set; }
+
+        public UnparsedTextFragment(string text)
         {
-            RawText = rawText;
+            RawText = text;
         }
     }
 
@@ -22,9 +28,9 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
         /// <summary>
         ///     The display text of the component.
         /// </summary>
-        public string DisplayText { get; protected set; }
+        public string DisplayText { get; internal set; }
 
-        public PlainTextFragment(string text) : base(text)
+        public PlainTextFragment(string text)
         {
             DisplayText = text;
         }
@@ -37,9 +43,9 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
         /// </summary>
         public string Url;
 
-        public LinkTextFragment(string rawText, string displayText, string url) : base(rawText)
+        public LinkTextFragment(string displayText, string url)
         {
-            Inner.AddFirst(new TextFragment(displayText));
+            Inner.AddFirst(new PlainTextFragment(displayText));
             Url = url;
         }
     }
