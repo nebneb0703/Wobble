@@ -8,6 +8,7 @@ using SpriteFontPlus;
 using Wobble.Graphics.Animations;
 using Wobble.Graphics.Sprites.Text.Formatting;
 using Wobble.Graphics.UI.Buttons;
+using Wobble.Logging;
 
 namespace Wobble.Graphics.Sprites.Text
 {
@@ -61,29 +62,29 @@ namespace Wobble.Graphics.Sprites.Text
 
                 _rawText = value ?? "";
                 
-                ParseText();
+                RefreshText();
             }
         }
 
         /// <summary>
         ///     The formatted, display text to render.
         /// </summary>
-        private string _displayText = "";
-        public string DisplayText
+        private string _text = "";
+        public string Text
         {
-            get => _displayText;
-            private set
-            {
-                if (value == _displayText)
-                    return;
-
-                _displayText = value ?? "";
-
-                RefreshText();
-            }
+            get => _text;
+            set => RawText = value; // To not break current API
         }
         
-        private TextFragment[] Fragments { get; set; }
+        /// <summary>
+        ///     Formatted text fragments derived from <see cref="RawText"/>.
+        /// </summary>
+        private LinkedList<TextFragment> Fragments { get; set; }
+
+        /// <summary>
+        ///     Text Formatter to be used for this SpriteTextPlus instance.
+        /// </summary>
+        private TextFormatter Formatter { get; set; } = new TextFormatter();
 
         /// <summary>
         ///     The tint this QuaverSprite will inherit.
@@ -96,6 +97,7 @@ namespace Wobble.Graphics.Sprites.Text
             {
                 _tint = value;
 
+                // todo: dont forget this
                 /*Children.ForEach(x =>
                 {
                     if (x is Sprite sprite)
@@ -153,36 +155,17 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="text"></param>
         /// <param name="size"></param>
         /// <param name="cache"></param>
-        public SpriteTextPlus(WobbleFontStore font, string text, int size = 0, bool cache = true)
+        public SpriteTextPlus(WobbleFontStore font, string text, int size = 0, bool cache = true, TextFormatter formatter = null)
         {
+            if (formatter != null)
+                Formatter = formatter;
+
             Font = font;
             RawText = text;
             IsCached = cache;
-
+            
             FontSize = size == 0 ? Font.DefaultSize : size;
             SetChildrenAlpha = true;
-        }
-
-        private void ParseText()
-        {
-            Fragments = TextFormatter.Format(RawText);
-
-            var builder = new StringBuilder();
-            
-            BuildText(builder, Fragments);
-
-            DisplayText = builder.ToString();
-        }
-
-        void BuildText(StringBuilder builder, IEnumerable<TextFragment> fragments)
-        {
-            foreach(TextFragment fragment in fragments)
-            {
-                if (fragment is PlainTextFragment text)
-                    builder.Append(text.DisplayText);
-                else if(fragment.Inner.Count > 0)
-                    BuildText(builder, fragment.Inner);
-            }
         }
 
         /// <summary>
@@ -192,7 +175,6 @@ namespace Wobble.Graphics.Sprites.Text
             // TODO: Actually make this work to set the width/height.
             if (!IsCached)
             {
-                // TODO: links
                 SetSize();
                 return;
             }
@@ -200,9 +182,14 @@ namespace Wobble.Graphics.Sprites.Text
             for (var i = Children.Count - 1; i >= 0; i--)
                 Children[i].Destroy();
 
+            Fragments = Formatter.Format(RawText);
+            Formatter.CreateSprites(this, Fragments);
+            
+            return;
+            
             float width = 0, height = 0;
 
-            var lines = DisplayText.Split('\n').ToList();
+            var lines = Text.Split('\n').ToList();
             for (var lineIndex = 0; lineIndex < lines.Count; lineIndex++)
             {
                 var line = lines[lineIndex];
@@ -236,8 +223,7 @@ namespace Wobble.Graphics.Sprites.Text
 
                     // It's always initialized, but the C# compiler isn't smart enough to figure that out.
                     int? nextLineStart = null;
-
-                    // TODO: ensure this doesn't break links
+                    
                     if (splitOnIndex == -1)
                     {
                         // Splitting even on the first whitespace gives a line that's too long (or there are no spaces at all),
@@ -299,8 +285,6 @@ namespace Wobble.Graphics.Sprites.Text
 
             Size = new ScalableVector2(width, height);
         }
-
-        // todo: uhhhhhhhhh
         
         /// <summary>
         ///     Truncates the text with an elipsis according to <see cref="maxWidth"/>
@@ -308,6 +292,9 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="maxWidth"></param>
         public void TruncateWithEllipsis(int maxWidth)
         {
+            // todo: uhhhhhhhhh
+            return;
+            
             var originalText = RawText;
 
             // Multi-line (MaxWidth) + Ellipis truncation
@@ -341,17 +328,18 @@ namespace Wobble.Graphics.Sprites.Text
 
         public override void DrawToSpriteBatch()
         {
-            if (IsCached)
+            // todo: account for fragments
+            //if (IsCached)
                 return;
 
             SetSize();
-            GameBase.Game.SpriteBatch.DrawString(Font.Store, DisplayText, AbsolutePosition, _tint * Alpha);
+            GameBase.Game.SpriteBatch.DrawString(Font.Store, Text, AbsolutePosition, _tint * Alpha);
         }
 
         private void SetSize()
         {
             Font.Store.Size = FontSize;
-            var (x, y) = Font.Store.MeasureString(DisplayText);
+            var (x, y) = Font.Store.MeasureString(Text);
             Size = new ScalableVector2(x, y);
         }
         
@@ -359,7 +347,7 @@ namespace Wobble.Graphics.Sprites.Text
         /// </summary>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        private Alignment ConvertTextAlignment()
+        internal Alignment ConvertTextAlignment()
         {
             switch (TextAlignment)
             {
