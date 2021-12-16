@@ -55,7 +55,7 @@ namespace Wobble.Tests.Screens.Tests.SpriteTextPlusNew
             cyrillic.AddBorder(Color.Cyan, 2);
             
             var links = new SpriteTextPlus(
-                Font, "Click the link to play the game: https://quavergame.com! [Source Code](https://github.com/Quaver/Quaver)!!!",
+                Font, "Click the link to play the game:\nhttps://quavergame.com! [Source Code](https://github.com/Quaver/Quaver)!!!",
                 24
             ) {
                 Parent = Container,
