@@ -10,7 +10,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
     public class TextFormatter
     {
         /// <summary>
-        ///     Ordered of all text formatters by priority.
+        ///     Ordered array of all text formatters by priority.
         /// </summary>
         public IFormatter[] TextFormatters { get; protected set; } =
         {
@@ -136,7 +136,8 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             float width = 0f, height = 0f;
 
             float currentLineWidth = 0f;
-            
+            int newLineCount = 0;
+
             while (current != null)
             {
                 var builder = new StringBuilder();
@@ -146,8 +147,6 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
 
                 string line = text;
 
-                bool newLine = false;
-                
                 var newLineIndex = text.IndexOf('\n');
                 if (newLineIndex == 0)
                 {
@@ -164,7 +163,8 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
 
                     continue;
                 }
-                else if (newLineIndex != -1)
+                
+                if (newLineIndex != -1)
                 {
                     // Split fragments at this position.
                     // Copy index due to ref.
@@ -175,7 +175,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     // Use substring instead of GetTextRecursive for efficiency
                     line = text.Substring(0, newLineIndex);
 
-                    newLine = true;
+                    newLineCount++;
                 }
 
                 var sprites = CreateSpritesRecursive(parent, current.Value);
@@ -285,14 +285,10 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
 
                             var originalText = sprite.Text;
 
-                            var left = sprite.Text.Substring(0, relativeCharPosition);
-                            sprite.Text = left;
+                            sprite.Text = sprite.Text.Substring(0, relativeCharPosition);
 
                             var spriteWidth = currentLineWidth + previousWidth + sprite.Width;
 
-                            // Reset text, will be split later.
-                            sprite.Text = originalText;
-                            
                             // If we're left with 1 character, just go with it even if we're over MaxWidth.
                             if (spriteWidth > parent.MaxWidth && i > 1)
                                 continue;
@@ -315,7 +311,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     Split(current, ref fragmentSplitIndex, skipChar);
 
                     // New line has been created, update values.
-                    newLine = true;
+                    newLineCount++;
                 }
 
                 float lineWidth = 0f;
@@ -339,12 +335,13 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                 
                 width = Math.Max(width, currentLineWidth);
 
-                if (newLine)
+                if (newLineCount > 0)
                 {
                     parent.Font.Store.Size = parent.FontSize;
                     height += parent.Font.Store.GetLineHeight();
 
                     currentLineWidth = 0f;
+                    newLineCount--;
                 }
                 
                 current = current.Next;
