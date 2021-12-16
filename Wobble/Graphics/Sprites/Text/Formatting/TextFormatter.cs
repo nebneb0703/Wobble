@@ -187,10 +187,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                 if (parent.MaxWidth != null && currentLineWidth + totalFragmentWidth > parent.MaxWidth)
                 {
                     Debug.Assert(line.Length > 0);
-                    
-                    SpriteTextPlusLine targetSprite = null;
-                    var newSpriteText = "";
-                    
+
                     // Temporarily remove parent, to not cause chain reactions
                     for (int i = 0; i < sprites.Count; i++)
                         sprites[i].Parent = null;
@@ -234,24 +231,11 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
 
                         var originalText = sprite.Text;
 
-                        var left = sprite.Text.Substring(0, relativeSpacePosition);
-                        
-                        sprite.Text = left;
+                        sprite.Text = sprite.Text.Substring(0, relativeSpacePosition);
 
                         var spriteWidth = currentLineWidth + previousWidth + sprite.Width;
-                        
-                        // Reset text, will be split later.
-                        sprite.Text = originalText;
 
-                        if (spriteWidth <= parent.MaxWidth)
-                        {
-                            targetSprite = sprite;
-                            newSpriteText = left;
-                            
-                            return true;
-                        }
-                        
-                        return false;
+                        return spriteWidth <= parent.MaxWidth;
                     });
 
                     int fragmentSplitIndex = 0;
@@ -313,9 +297,6 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                             if (spriteWidth > parent.MaxWidth && i > 1)
                                 continue;
 
-                            targetSprite = sprite;
-                            newSpriteText = left;
-                            
                             fragmentSplitIndex = i;
                             skipChar = false;
                             break;
@@ -333,8 +314,6 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     
                     Split(current, ref fragmentSplitIndex, skipChar);
 
-                    targetSprite.Text = newSpriteText;
-                    
                     // New line has been created, update values.
                     newLine = true;
                 }
