@@ -9,12 +9,12 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
         
         public Type FragmentType() => typeof(LinkTextFragment);
 
-        public void OnTextUpdate(SpriteTextPlus parent, TextFragment fragment, ref SpriteTextPlusLine sprite)
+        public void OnTextUpdate(SpriteTextPlus parent, TextFragment fragment, SpriteTextPlusLine sprite)
         {
             // todo: create buttons
         }
         
-        public void ModifySprite(SpriteTextPlus parent, TextFragment fragment, ref SpriteTextPlusLine sprite)
+        public void ModifySprite(SpriteTextPlus parent, TextFragment fragment, SpriteTextPlusLine sprite)
         {
             sprite.Tint = LinkColor;
         }
