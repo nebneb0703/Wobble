@@ -12,20 +12,17 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
         /// <summary>
         ///     Ordered array of all text formatters by priority.
         /// </summary>
-        public IFormatter[] TextFormatters { get; protected set; } =
+        public IFormatter[] TextFormatters { get; } =
         {
             new LinkFormatter(),
         };
 
-        public Dictionary<System.Type, IRenderer> TextRenderers { get; protected set; } = new Dictionary<Type, IRenderer>();
+        public Dictionary<System.Type, IRenderer> TextRenderers { get; } = new Dictionary<Type, IRenderer>();
 
-        // Does not need to be instantiated several times, keep static.
-        private static readonly PlainTextRenderer plainTextRenderer = new PlainTextRenderer();
-        
         /// <summary>
         ///     Default renderers to be used by the text formatter. PlainTextRenderer is always assumed.
         /// </summary>
-        private IRenderer[] defaultRenderers =
+        private static readonly IRenderer[] defaultRenderers =
         {
             new LinkRenderer(),
         };
@@ -47,7 +44,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     Logger.Warning($"Text Renderer {textRenderers[0].GetType()} cannot be initialised, as there is already another Renderer for the {textRenderers[0].FragmentType()} Fragment.", LogType.Runtime);
         }
 
-        public virtual LinkedList<TextFragment> Format(string rawText)
+        public LinkedList<TextFragment> Format(string rawText)
         {
             LinkedList<TextFragment> fragments = new LinkedList<TextFragment>();
 
@@ -188,10 +185,6 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                 {
                     Debug.Assert(line.Length > 0);
 
-                    // Temporarily remove parent, to not cause chain reactions
-                    for (int i = 0; i < sprites.Count; i++)
-                        sprites[i].Parent = null;
-                    
                     // Try to split the line on spaces to fit it into MaxWidth.
                     var spaces = new List<int>();
                     for (var i = 0; i < line.Length; i++)
@@ -210,7 +203,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                         var relativeSpacePosition = spacePosition;
                         float previousWidth = 0;
 
-                        SpriteTextPlusLine sprite = null;
+                        int spriteIndex = 0;
                         for (int i = 0; i < textLengths.Count; i++)
                         {
                             if (relativeSpacePosition > textLengths[i])
@@ -225,17 +218,26 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                             }
 
                             // Space is in this sprite.
-                            sprite = sprites[i];
+                            spriteIndex = i;
                             break;
                         }
-
-                        var originalText = sprite.Text;
-
+                        
+                        var sprite = sprites[spriteIndex];
+                        
                         sprite.Text = sprite.Text.Substring(0, relativeSpacePosition);
 
                         var spriteWidth = currentLineWidth + previousWidth + sprite.Width;
 
-                        return spriteWidth <= parent.MaxWidth;
+                        if (spriteWidth <= parent.MaxWidth)
+                        {
+                            // Clean up remaining sprites, will be recreated next iteration.
+                            for(int j = spriteIndex + 1; j < sprites.Count; j++)
+                                sprites[j].Destroy();
+
+                            return true;
+                        }
+
+                        return false;
                     });
 
                     int fragmentSplitIndex = 0;
@@ -254,8 +256,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                         var lastIndex = line.Length;
                         if (spaces.Count > 0)
                             lastIndex = spaces[0];
-
-                        // todo: this
+                        
                         for (var i = lastIndex; i != 0; i--)
                         {
                             var relativeCharPosition = i;
@@ -264,7 +265,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                             // This follows the same logic as the space detection up above.
                             // It is necessary to get the widths of the previous sprites and hence
                             // follow the same logic as the spaces, even though this is sequential (and descending).
-                            SpriteTextPlusLine sprite = null;
+                            int spriteIndex = 0;
                             for (int j = 0; j < textLengths.Count; j++)
                             {
                                 if (relativeCharPosition > textLengths[j])
@@ -279,12 +280,12 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                                 }
 
                                 // Target char is in this sprite.
-                                sprite = sprites[j];
+                                spriteIndex = j;
                                 break;
                             }
 
-                            var originalText = sprite.Text;
-
+                            var sprite = sprites[spriteIndex];
+                            
                             sprite.Text = sprite.Text.Substring(0, relativeCharPosition);
 
                             var spriteWidth = currentLineWidth + previousWidth + sprite.Width;
@@ -293,8 +294,12 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                             if (spriteWidth > parent.MaxWidth && i > 1)
                                 continue;
 
+                            // Clean up remaining sprites, will be recreated next iteration.
+                            for(int j = spriteIndex + 1; j < sprites.Count; j++)
+                                sprites[j].Destroy();
+
                             fragmentSplitIndex = i;
-                            skipChar = false;
+                            skipChar = false; // Do not skip the character, as it is not whitespace.
                             break;
                         }
                     }
@@ -303,14 +308,9 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                         // Split fragment at new line
                         fragmentSplitIndex = spaces[splitOnIndex];
                     }
-                    
-                    // Reapply parent in correct order
-                    for (int i = 0; i < sprites.Count; i++)
-                        sprites[i].Parent = parent;
-                    
-                    Split(current, ref fragmentSplitIndex, skipChar);
 
-                    // New line has been created, update values.
+                    Split(current, ref fragmentSplitIndex, skipChar);
+                    
                     newLineCount++;
                 }
 
@@ -442,8 +442,12 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             if (fragment is PlainTextFragment f)
             {
                 // Modify this variable, then add to list
-                SpriteTextPlusLine sprite = null;
-                plainTextRenderer.ModifySprite(parent, f, ref sprite);
+                SpriteTextPlusLine sprite = new SpriteTextPlusLine(parent.Font, ((PlainTextFragment)fragment).DisplayText, parent.FontSize)
+                {
+                    Parent = parent,
+                    Tint = parent.Tint,
+                    Alpha = parent.Alpha,
+                };
 
                 return new List<SpriteTextPlusLine>() { sprite };
             }
@@ -471,7 +475,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     var inner = innerSprites[i];
                     
                     // Apply current renderer and add to the list
-                    renderer.ModifySprite(parent, fragment, ref inner);
+                    renderer.ModifySprite(parent, fragment, inner);
 
                     // Shift sprites to the correct position
                     inner.X += width;
