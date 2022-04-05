@@ -37,38 +37,21 @@ namespace Wobble.Graphics.Sprites.Text
             }
         }
 
-        /*/// <summary>
-        ///     The font to be used
-        /// </summary>
-        public WobbleFontStore Font { get => _raw.Font; }*/
-
-        /*/// <summary>
-        ///     The pt. font size
-        /// </summary>
-        public float FontSize
-        {
-            get => _raw.FontSize / _scale;
-            set
-            {
-                _raw.FontSize = value * _scale;
-                SetSize();
-                _dirty = true;
-            }
-        }*/
-
-        /*/// <summary>
-        ///     The text displayed for the font.
-        /// </summary>
-        public string Text
-        {
-            get => _raw.Text;
-            set
-            {
-                _raw.Text = value;
-                SetSize();
-                _dirty = true;
-            }
-        }*/
+        // todo: fix this to properly display inner text.
+        
+        // /// <summary>
+        // ///     The text displayed for the font.
+        // /// </summary>
+        // public string Text
+        // {
+        //     get => raw;
+        //     set
+        //     {
+        //         _raw.Text = value;
+        //         SetSize();
+        //         _dirty = true;
+        //     }
+        // }
 
         /// <summary>
         ///     The rendertarget used to cache the text
@@ -103,6 +86,8 @@ namespace Wobble.Graphics.Sprites.Text
             for (int i = 0; i < raw.Length; i++)
                 raw[i].Destroy();
 
+            // todo: reconsider storage in array if stored as children?
+            
             for (int i = 0; i < components.Length; i++)
                 components[i].Parent = this;
             
@@ -241,6 +226,8 @@ namespace Wobble.Graphics.Sprites.Text
                 return;
             }
 
+            // todo: fix this.
+            
             Visible = true;
 
             if (RenderTarget != null && !RenderTarget.IsDisposed)
@@ -252,10 +239,10 @@ namespace Wobble.Graphics.Sprites.Text
             GameBase.Game.GraphicsDevice.SetRenderTarget(RenderTarget);
             GameBase.Game.GraphicsDevice.Clear(Color.TransparentBlack);
 
-            for (int i = 0; i < raw.Length; i++)
-                raw[i].Draw(gameTime);
+            // for (int i = 0; i < raw.Length; i++)
+            //     raw[i].Draw(gameTime);
 
-            GameBase.Game.SpriteBatch.End();
+            // GameBase.Game.SpriteBatch.End();
 
             GameBase.Game.GraphicsDevice.SetRenderTarget(null);
 
