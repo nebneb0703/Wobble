@@ -14,7 +14,7 @@ namespace Wobble.Graphics.Sprites.Text
         /// <summary>
         ///     The underlying text rendering component.
         /// </summary>
-        private SpriteTextPlusLineRaw _raw;
+        private SpriteTextPlusLineRaw[] raw = Array.Empty<SpriteTextPlusLineRaw>();
 
         /// <summary>
         ///     Whether the cached texture needs to be refreshed.
@@ -25,7 +25,7 @@ namespace Wobble.Graphics.Sprites.Text
         ///     Current WindowManager scale.
         /// </summary>
         private float _scale;
-        private float Scale
+        internal float Scale
         {
             get => _scale;
             set
@@ -33,22 +33,16 @@ namespace Wobble.Graphics.Sprites.Text
                 if (_scale == value)
                     return;
 
-                // Retrieve the original font size (computed with old scale).
-                var fontSize = FontSize;
-
                 _scale = value;
-
-                // Set the font size with the new scale.
-                FontSize = fontSize;
             }
         }
 
-        /// <summary>
+        /*/// <summary>
         ///     The font to be used
         /// </summary>
-        public WobbleFontStore Font { get => _raw.Font; }
+        public WobbleFontStore Font { get => _raw.Font; }*/
 
-        /// <summary>
+        /*/// <summary>
         ///     The pt. font size
         /// </summary>
         public float FontSize
@@ -60,9 +54,9 @@ namespace Wobble.Graphics.Sprites.Text
                 SetSize();
                 _dirty = true;
             }
-        }
+        }*/
 
-        /// <summary>
+        /*/// <summary>
         ///     The text displayed for the font.
         /// </summary>
         public string Text
@@ -74,7 +68,7 @@ namespace Wobble.Graphics.Sprites.Text
                 SetSize();
                 _dirty = true;
             }
-        }
+        }*/
 
         /// <summary>
         ///     The rendertarget used to cache the text
@@ -86,18 +80,12 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="font"></param>
         /// <param name="text"></param>
         /// <param name="size"></param>
-        public SpriteTextPlusLine(WobbleFontStore font, string text, float size = 0)
+        public SpriteTextPlusLine(SpriteTextPlusLineRaw[] components = null)
         {
             _scale = GetScale();
 
-            _raw = new SpriteTextPlusLineRaw(font, text, size * _scale)
-            {
-                SpriteBatchOptions = new SpriteBatchOptions
-                {
-                    DoNotScale = true,
-                    BlendState = BlendState.AlphaBlend
-                }
-            };
+            if (components != null)
+                SetComponents(components);
 
             SetSize();
 
@@ -106,10 +94,26 @@ namespace Wobble.Graphics.Sprites.Text
         }
 
         /// <summary>
+        ///     Set raw components of this line. Assume correct scaling already.
+        /// </summary>
+        /// <param name="components"></param>
+        public void SetComponents(SpriteTextPlusLineRaw[] components)
+        {
+            // Clean up old components
+            for (int i = 0; i < raw.Length; i++)
+                raw[i].Destroy();
+
+            for (int i = 0; i < components.Length; i++)
+                components[i].Parent = this;
+            
+            raw = components;
+        }
+        
+        /// <summary>
         ///     Get the current WindowManager scale and check that it's valid.
         /// </summary>
         /// <returns></returns>
-        private static float GetScale()
+        internal static float GetScale()
         {
             var scale = WindowManager.ScreenScale.X;
             Debug.Assert(scale > 0, "You're setting up text too early (WindowManager.ScreenScale.X is 0).");
@@ -125,13 +129,22 @@ namespace Wobble.Graphics.Sprites.Text
         /// </summary>
         private void SetSize()
         {
-            // Round the size the same way it will be rounded during rendering.
-            var (width, height) = _raw.AbsoluteSize;
-            var pixelWidth = Math.Ceiling(width);
-            var pixelHeight = Math.Ceiling(height);
+            float width = 0, height = 0;
+            for (int i = 0; i < raw.Length; i++)
+            {
+                var rawSprite = raw[i];
+                
+                // Round the size the same way it will be rounded during rendering.
+                var (rawWidth, rawHeight) = rawSprite.AbsoluteSize;
+                var pixelWidth = Math.Ceiling(rawWidth);
+                var pixelHeight = Math.Ceiling(rawHeight);
 
-            var flooredSize = new ScalableVector2((float) pixelWidth, (float) pixelHeight);
-            Size = flooredSize / _scale;
+                // Update bounds of line
+                width += (float) pixelWidth;
+                height = Math.Max(height, (float) pixelHeight);
+            }
+            
+            Size = new ScalableVector2(width, height);
         }
 
         /// <inheritdoc />
@@ -206,12 +219,23 @@ namespace Wobble.Graphics.Sprites.Text
             {
                 // ignored
             }
+            
+            int width = 0, height = 0;
+            for (int i = 0; i < raw.Length; i++)
+            {
+                var rawSprite = raw[i];
+                
+                // Round the size the same way it will be rounded during rendering.
+                var (rawWidth, rawHeight) = rawSprite.AbsoluteSize;
+                var pixelWidth = Math.Ceiling(rawWidth);
+                var pixelHeight = Math.Ceiling(rawHeight);
 
-            var (width, height) = _raw.AbsoluteSize;
-            var pixelWidth = (int) Math.Ceiling(width);
-            var pixelHeight = (int) Math.Ceiling(height);
+                // Update bounds of line
+                width += (int) pixelWidth;
+                height = Math.Max(height, (int) pixelHeight);
+            }
 
-            if (pixelWidth == 0 || pixelHeight == 0)
+            if (width == 0 || height == 0)
             {
                 Visible = false;
                 return;
@@ -222,12 +246,15 @@ namespace Wobble.Graphics.Sprites.Text
             if (RenderTarget != null && !RenderTarget.IsDisposed)
                 RenderTarget?.Dispose();
 
-            RenderTarget = new RenderTarget2D(GameBase.Game.GraphicsDevice, pixelWidth, pixelHeight, false,
+            RenderTarget = new RenderTarget2D(GameBase.Game.GraphicsDevice, width, height, false,
                 GameBase.Game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.None);
 
             GameBase.Game.GraphicsDevice.SetRenderTarget(RenderTarget);
             GameBase.Game.GraphicsDevice.Clear(Color.TransparentBlack);
-            _raw.Draw(gameTime);
+
+            for (int i = 0; i < raw.Length; i++)
+                raw[i].Draw(gameTime);
+
             GameBase.Game.SpriteBatch.End();
 
             GameBase.Game.GraphicsDevice.SetRenderTarget(null);

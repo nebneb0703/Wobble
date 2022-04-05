@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using Microsoft.Xna.Framework.Graphics;
 using Wobble.Logging;
 
 namespace Wobble.Graphics.Sprites.Text.Formatting
@@ -135,6 +136,8 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             float currentLineWidth = 0f;
             int newLineCount = 0;
 
+            List<SpriteTextPlusLineRaw> currentLineSprites = new List<SpriteTextPlusLineRaw>();
+
             while (current != null)
             {
                 var builder = new StringBuilder();
@@ -157,7 +160,6 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     currentLineWidth = 0f;
 
                     current = current.Next;
-
                     continue;
                 }
                 
@@ -313,39 +315,61 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     
                     newLineCount++;
                 }
-
-                float lineWidth = 0f;
                 
+                float remainderWidth = 0f;
                 for (int i = 0; i < sprites.Count; i++)
                 {
                     var sprite = sprites[i];
 
-                    sprite.X += currentLineWidth + lineWidth;
-                    sprite.Y = height;
-                    
-                    // todo: :eyes:
-                    sprite.Alignment = parent.ConvertTextAlignment();
-                    
+                    // Move to correct X position, relative to the start of the line.
+                    sprite.X += currentLineWidth + remainderWidth;
+
                     sprite.UsePreviousSpriteBatchOptions = true;
 
-                    lineWidth += sprite.Width;
+                    remainderWidth += sprite.Width;
                 }
                 
-                currentLineWidth += lineWidth;
-                
-                width = Math.Max(width, currentLineWidth);
+                currentLineWidth += remainderWidth;
 
+                // Add new sprites to the line
+                currentLineSprites.AddRange(sprites);
+                
                 if (newLineCount > 0)
                 {
+                    // Create a new line
+                    var lineSprite = new SpriteTextPlusLine(currentLineSprites.ToArray())
+                    {
+                        Parent = parent,
+                        Y = height,
+                        Alignment = parent.ConvertTextAlignment(),
+                        UsePreviousSpriteBatchOptions = true
+                    };
+                    
+                    width = Math.Max(width, lineSprite.Width);
+                    
+                    // Update current height/Y position
                     parent.Font.Store.Size = parent.FontSize;
                     height += parent.Font.Store.GetLineHeight();
 
+                    // Reset line variables
+                    currentLineSprites.Clear();
                     currentLineWidth = 0f;
                     newLineCount--;
                 }
                 
                 current = current.Next;
             }
+            
+            // Create final line
+            var finalLineSprite = new SpriteTextPlusLine(currentLineSprites.ToArray())
+            {
+                Parent = parent,
+                Y = height,
+                Alignment = parent.ConvertTextAlignment(),
+                UsePreviousSpriteBatchOptions = true
+            };
+            
+            width = Math.Max(width, finalLineSprite.Width);
             
             // Add on height of last line
             parent.Font.Store.Size = parent.FontSize;
@@ -384,10 +408,16 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     var right = text.DisplayText.Substring(skipSplitChar ? splitIndex + 1 : splitIndex);
 
                     text.DisplayText = left;
-                        
-                    var newFragment = new PlainTextFragment(right);
 
-                    return fragment.List.AddAfter(fragment, newFragment);
+                    // Create a new fragment if the right part of the split is not empty.
+                    if (right != "")
+                    {
+                        var newFragment = new PlainTextFragment(right);
+                        return fragment.List.AddAfter(fragment, newFragment);
+                    }
+                    
+                    // Default to next item.
+                    return fragment.Next;
                 }
                     
                 // Split point is not in this fragment.
@@ -437,19 +467,23 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                 GetTextRecursive(builder, fragment.Inner);
         }
 
-        private List<SpriteTextPlusLine> CreateSpritesRecursive(SpriteTextPlus parent, TextFragment fragment)
+        private List<SpriteTextPlusLineRaw> CreateSpritesRecursive(SpriteTextPlus parent, TextFragment fragment)
         {
             if (fragment is PlainTextFragment f)
             {
                 // Modify this variable, then add to list
-                SpriteTextPlusLine sprite = new SpriteTextPlusLine(parent.Font, ((PlainTextFragment)fragment).DisplayText, parent.FontSize)
+                SpriteTextPlusLineRaw sprite = new SpriteTextPlusLineRaw(parent.Font, f.DisplayText, parent.FontSize)
                 {
-                    Parent = parent,
                     Tint = parent.Tint,
                     Alpha = parent.Alpha,
+                    SpriteBatchOptions = new SpriteBatchOptions
+                    {
+                        DoNotScale = true,
+                        BlendState = BlendState.AlphaBlend
+                    }
                 };
 
-                return new List<SpriteTextPlusLine>() { sprite };
+                return new List<SpriteTextPlusLineRaw>() { sprite };
             }
 
             IRenderer renderer;
@@ -457,10 +491,10 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             {
                 Logger.Warning($"No corresponding Text Renderer found for Fragment type {fragment.GetType()}.", LogType.Runtime);
 
-                return new List<SpriteTextPlusLine>();
+                return new List<SpriteTextPlusLineRaw>();
             }
 
-            var newSprites = new List<SpriteTextPlusLine>();
+            var newSprites = new List<SpriteTextPlusLineRaw>();
             
             var innerFragment = fragment.Inner.First;
             
@@ -468,18 +502,12 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             {
                 var innerSprites = CreateSpritesRecursive(parent, innerFragment.Value);
 
-                float width = 0f;
-                
                 for(int i = 0; i < innerSprites.Count; i++)
                 {
                     var inner = innerSprites[i];
                     
                     // Apply current renderer and add to the list
-                    renderer.ModifySprite(parent, fragment, inner);
-
-                    // Shift sprites to the correct position
-                    inner.X += width;
-                    width += inner.Width;
+                    renderer.ModifySprite(fragment, inner);
 
                     newSprites.Add(inner);
                 }
