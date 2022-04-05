@@ -11,13 +11,14 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
         Type FragmentType();
 
         /// <summary>
-        ///     Called whenever sprite text is refreshed. Modify the sprite based on fragment attributes here.
+        ///     Called whenever sprite text is refreshed, and the
+        ///     sprite is being (re)created. Modify the sprite based on fragment attributes here.
         /// </summary>
-        void ModifySprite(TextFragment fragment, SpriteTextPlusLineRaw sprite);
+        void PreSpriteDraw(TextFragment fragment, SpriteTextPlusLineRaw sprite);
 
         /// <summary>
         ///     Called after the sprite has been created. Use this to create additional items for this fragment type.
         /// </summary>
-        void OnTextUpdate(TextFragment fragment, SpriteTextPlusLineRaw sprite);
+        void PostSpriteDraw(TextFragment fragment, SpriteTextPlusLineRaw sprite);
     }
 }

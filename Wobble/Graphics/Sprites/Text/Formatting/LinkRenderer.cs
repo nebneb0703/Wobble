@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
+using Wobble.Managers;
 
 namespace Wobble.Graphics.Sprites.Text.Formatting
 {
@@ -9,12 +10,12 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
         
         public Type FragmentType() => typeof(LinkTextFragment);
 
-        public void OnTextUpdate(TextFragment fragment, SpriteTextPlusLineRaw sprite)
+        public void PostSpriteDraw(TextFragment fragment, SpriteTextPlusLineRaw sprite)
         {
             // todo: create buttons
         }
         
-        public void ModifySprite(TextFragment fragment, SpriteTextPlusLineRaw sprite)
+        public void PreSpriteDraw(TextFragment fragment, SpriteTextPlusLineRaw sprite)
         {
             sprite.Tint = LinkColor;
         }

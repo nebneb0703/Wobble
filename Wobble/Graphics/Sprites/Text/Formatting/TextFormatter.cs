@@ -382,7 +382,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             
             parent.Size = new ScalableVector2(width, height);
             
-            // todo: OnTextUpdate
+            // todo: PostSpriteDraw
         }
 
         private LinkedListNode<TextFragment> Split(LinkedList<TextFragment> fragments, ref int splitIndex, bool skipSplitChar = true)
@@ -476,7 +476,6 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
         {
             if (fragment is PlainTextFragment f)
             {
-                // Modify this variable, then add to list
                 SpriteTextPlusLineRaw sprite = new SpriteTextPlusLineRaw(parent.Font, f.DisplayText, parent.FontSize)
                 {
                     Tint = parent.Tint,
@@ -513,7 +512,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     var inner = innerSprites[i];
                     
                     // Apply current renderer and add to the list
-                    renderer.ModifySprite(fragment, inner);
+                    renderer.PreSpriteDraw(fragment, inner);
 
                     newSprites.Add(inner);
                 }
