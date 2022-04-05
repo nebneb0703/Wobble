@@ -134,6 +134,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             float width = 0f, height = 0f;
 
             float currentLineWidth = 0f;
+            float currentLineHeight = 0f;
             int newLineCount = 0;
 
             List<SpriteTextPlusLineRaw> currentLineSprites = new List<SpriteTextPlusLineRaw>();
@@ -158,6 +159,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     height += parent.Font.Store.GetLineHeight();
 
                     currentLineWidth = 0f;
+                    currentLineHeight = 0f;
 
                     current = current.Next;
                     continue;
@@ -324,6 +326,8 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     // Move to correct X position, relative to the start of the line.
                     sprite.X += currentLineWidth + remainderWidth;
 
+                    currentLineHeight = Math.Max(currentLineHeight, sprite.Font.Store.GetLineHeight());
+
                     sprite.UsePreviousSpriteBatchOptions = true;
 
                     remainderWidth += sprite.Width;
@@ -349,11 +353,12 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     
                     // Update current height/Y position
                     parent.Font.Store.Size = parent.FontSize;
-                    height += parent.Font.Store.GetLineHeight();
+                    height += currentLineHeight;
 
                     // Reset line variables
                     currentLineSprites.Clear();
                     currentLineWidth = 0f;
+                    currentLineHeight = 0f;
                     newLineCount--;
                 }
                 
@@ -373,7 +378,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             
             // Add on height of last line
             parent.Font.Store.Size = parent.FontSize;
-            height += parent.Font.Store.GetLineHeight();
+            height += currentLineHeight;
             
             parent.Size = new ScalableVector2(width, height);
             
@@ -476,6 +481,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                 {
                     Tint = parent.Tint,
                     Alpha = parent.Alpha,
+                    Alignment = Alignment.MidLeft,
                     SpriteBatchOptions = new SpriteBatchOptions
                     {
                         DoNotScale = true,

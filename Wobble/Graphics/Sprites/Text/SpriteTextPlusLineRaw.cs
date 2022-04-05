@@ -10,7 +10,17 @@ namespace Wobble.Graphics.Sprites.Text
         /// <summary>
         ///     The font to be used
         /// </summary>
-        public WobbleFontStore Font { get; }
+        private WobbleFontStore _font;
+        
+        public WobbleFontStore Font
+        {
+            get => _font;
+            set
+            {
+                _font = value;
+                RefreshSize();
+            }
+        }
 
         /// <summary>
         ///     The pt. font size
@@ -28,7 +38,7 @@ namespace Wobble.Graphics.Sprites.Text
         }
 
         /// <summary>
-        ///     The raw, unformatted text.
+        ///     The text string to draw.
         /// </summary>
         private string _text = "";
 
