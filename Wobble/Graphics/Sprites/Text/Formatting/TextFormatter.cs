@@ -435,7 +435,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
 
                 var newParent = (TextFragment)fragment.Value.Clone();
                 newParent.Inner = new LinkedList<TextFragment>();
-
+                
                 // Move remaining fragments to a new parent
                 while (remainder != null)
                 {
@@ -444,6 +444,9 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                         
                     remainder = remainder.Next;
                 }
+                
+                // Add parent fragment to the list
+                fragment.List.AddAfter(fragment, newParent);
 
                 return fragment.Next;
             }
