@@ -26,7 +26,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                 
                 // Add everything else before the match to the display text
                 string previousText = rawText.Substring(currentIndex, match.Index - currentIndex);
-                fragments.Add(new PlainTextFragment(previousText));
+                fragments.Add(new UnparsedTextFragment(previousText));
 
                 // Text from markdown
                 string linkText = match.Groups[1].Value;
@@ -50,7 +50,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             if (currentIndex < rawText.Length - 1)
             {
                 var remainderText = rawText.Substring(currentIndex, rawText.Length - currentIndex);
-                fragments.Add(new PlainTextFragment(remainderText));
+                fragments.Add(new UnparsedTextFragment(remainderText));
             }
 
             return fragments.ToArray();

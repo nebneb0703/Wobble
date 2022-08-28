@@ -137,7 +137,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             float currentLineHeight = 0f;
             int newLineCount = 0;
 
-            List<SpriteTextPlusLineRaw> currentLineSprites = new List<SpriteTextPlusLineRaw>();
+            List<SpriteTextPlusRaw> currentLineSprites = new List<SpriteTextPlusRaw>();
 
             while (current != null)
             {
@@ -179,7 +179,9 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     newLineCount++;
                 }
 
-                var sprites = CreateSpritesRecursive(parent, current.Value);
+                // todo: rewrite this because there's too much state needed
+                var sprites = CreateSpritesRecursive(parent, current.Value, parent.MaxWidth - currentLineWidth);
+                // todo: yeet this stuff
                 var spriteWidths = sprites.Select(x => x.Width).ToList();
                 var textLengths = sprites.Select(x => x.Text.Length).ToList();
                 var totalFragmentWidth = spriteWidths.Sum();
@@ -326,6 +328,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     // Move to correct X position, relative to the start of the line.
                     sprite.X += currentLineWidth + remainderWidth;
 
+                    // todo: consider max-ing with actual sprite height
                     currentLineHeight = Math.Max(currentLineHeight, sprite.Font.Store.GetLineHeight());
 
                     sprite.UsePreviousSpriteBatchOptions = true;
@@ -405,7 +408,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
         {
             if (fragment.Value is PlainTextFragment text)
             {
-                if (text.DisplayText.Length > splitIndex)
+                if (splitIndex < text.DisplayText.Length)
                 {
                     // Split point is in this fragment.
 
@@ -475,11 +478,12 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                 GetTextRecursive(builder, fragment.Inner);
         }
 
-        private List<SpriteTextPlusLineRaw> CreateSpritesRecursive(SpriteTextPlus parent, TextFragment fragment)
+        private List<SpriteTextPlusRaw> CreateSpritesRecursive(SpriteTextPlus parent, TextFragment fragment, float? maxWidth, float currentWidth = 0)
         {
             if (fragment is PlainTextFragment f)
             {
-                SpriteTextPlusLineRaw sprite = new SpriteTextPlusLineRaw(parent.Font, f.DisplayText, parent.FontSize)
+                // todo: scale???
+                SpriteTextPlusRaw sprite = new SpriteTextPlusRaw(parent.Font, f.DisplayText, parent.FontSize)
                 {
                     Tint = parent.Tint,
                     Alpha = parent.Alpha,
@@ -491,7 +495,10 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     }
                 };
 
-                return new List<SpriteTextPlusLineRaw>() { sprite };
+                // todo: make sure this is correct
+                currentWidth += sprite.Width;
+
+                return new List<SpriteTextPlusRaw>() { sprite };
             }
 
             IRenderer renderer;
@@ -499,17 +506,18 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             {
                 Logger.Warning($"No corresponding Text Renderer found for Fragment type {fragment.GetType()}.", LogType.Runtime);
 
-                return new List<SpriteTextPlusLineRaw>();
+                return new List<SpriteTextPlusRaw>();
             }
 
-            var newSprites = new List<SpriteTextPlusLineRaw>();
+            var newSprites = new List<SpriteTextPlusRaw>();
             
             var innerFragment = fragment.Inner.First;
             
             while (innerFragment != null)
             {
-                var innerSprites = CreateSpritesRecursive(parent, innerFragment.Value);
-
+                var innerSprites = CreateSpritesRecursive(parent, innerFragment.Value, maxWidth, currentWidth);
+                
+                // todo: limit to maxWidth if set
                 for(int i = 0; i < innerSprites.Count; i++)
                 {
                     var inner = innerSprites[i];

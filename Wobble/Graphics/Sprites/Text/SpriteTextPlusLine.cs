@@ -47,7 +47,7 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="font"></param>
         /// <param name="text"></param>
         /// <param name="size"></param>
-        public SpriteTextPlusLine(SpriteTextPlusLineRaw[] components = null)
+        public SpriteTextPlusLine(SpriteTextPlusRaw[] components = null)
         {
             SetChildrenAlpha = true;
             
@@ -64,7 +64,7 @@ namespace Wobble.Graphics.Sprites.Text
         ///     Set raw components of this line. Assume correct scaling already.
         /// </summary>
         /// <param name="components"></param>
-        public void SetComponents(SpriteTextPlusLineRaw[] components)
+        public void SetComponents(SpriteTextPlusRaw[] components)
         {
             // // Clean up old components
             // for (int i = 0; i < raw.Length; i++)

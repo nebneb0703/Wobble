@@ -61,7 +61,7 @@ namespace Wobble.Graphics.Sprites.Text
                     return;
 
                 _rawText = value ?? "";
-                
+                FormatText();
                 RefreshText();
             }
         }
@@ -87,28 +87,6 @@ namespace Wobble.Graphics.Sprites.Text
         private TextFormatter Formatter { get; set; } = new TextFormatter();
 
         /// <summary>
-        ///     The tint this QuaverSprite will inherit.
-        /// </summary>
-        private Color _tint = Color.White;
-        public Color Tint
-        {
-            get => _tint;
-            set
-            {
-                _tint = value;
-
-                // todo: dont forget this
-                /*Children.ForEach(x =>
-                {
-                    if (x is Sprite sprite)
-                    {
-                        sprite.Tint = value;
-                    }
-                });*/
-            }
-        }
-
-        /// <summary>
         ///     The alignment of the text
         /// </summary>
         private TextAlignment _textAlignment = TextAlignment.Left;
@@ -121,7 +99,7 @@ namespace Wobble.Graphics.Sprites.Text
                     return;
 
                 _textAlignment = value;
-                RefreshText();
+                RefreshText(); // todo: maybe update this to be more efficient?
             }
         }
 
@@ -169,20 +147,20 @@ namespace Wobble.Graphics.Sprites.Text
         }
 
         /// <summary>
+        ///     (Re)Format the raw text into fragments.
+        /// </summary>
+        private void FormatText()
+        {
+            Fragments = Formatter.Format(RawText);
+        }
+
+        /// <summary>
         /// </summary>
         private void RefreshText()
         {
-            // TODO: Actually make this work to set the width/height.
-            if (!IsCached)
-            {
-                SetSize();
-                return;
-            }
-            
             for (var i = Children.Count - 1; i >= 0; i--)
                 Children[i].Destroy();
-
-            Fragments = Formatter.Format(RawText);
+            
             Formatter.CreateSprites(this, Fragments);
         }
         
@@ -228,21 +206,10 @@ namespace Wobble.Graphics.Sprites.Text
 
         public override void DrawToSpriteBatch()
         {
-            // todo: account for fragments
-            //if (IsCached)
-                return;
-
-            SetSize();
-            GameBase.Game.SpriteBatch.DrawString(Font.Store, Text, AbsolutePosition, _tint * Alpha);
+            // Do not draw anything here, children will draw instead.
+            // todo: override Draw as well??
         }
 
-        private void SetSize()
-        {
-            Font.Store.Size = FontSize;
-            var (x, y) = Font.Store.MeasureString(Text);
-            Size = new ScalableVector2(x, y);
-        }
-        
         /// <summary>
         /// </summary>
         /// <returns></returns>

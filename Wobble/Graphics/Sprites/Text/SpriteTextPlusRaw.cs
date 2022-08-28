@@ -8,7 +8,7 @@ using Wobble.Window;
 
 namespace Wobble.Graphics.Sprites.Text
 {
-    public class SpriteTextPlusLineRaw : Sprite
+    public class SpriteTextPlusRaw : Sprite
     {
         /// <summary>
         ///     The font to be used
@@ -65,7 +65,7 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="font"></param>
         /// <param name="text"></param>
         /// <param name="size"></param>
-        public SpriteTextPlusLineRaw(WobbleFontStore font, string text, float size = 0)
+        public SpriteTextPlusRaw(WobbleFontStore font, string text, float size = 0)
         {
             Scale = GetScale();
             
@@ -105,12 +105,14 @@ namespace Wobble.Graphics.Sprites.Text
             if (!Visible)
                 return;
 
+            // todo:
             Font.Store.Size = FontSize;
             GameBase.Game.SpriteBatch.DrawString(Font.Store, Text, AbsolutePosition, _color);
         }
 
         private void RefreshSize()
         {
+            // todo: 
             Font.Store.Size = FontSize;
 
             var (x, y) = Font.Store.MeasureString(Text);
