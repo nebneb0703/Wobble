@@ -61,6 +61,7 @@ namespace Wobble.Tests.Screens.Tests.SpriteTextPlusNew
                 Parent = Container,
                 Alignment = Alignment.MidCenter,
                 TextAlignment = TextAlignment.Center,
+                MaxWidth = 350,
                 Y = 50,
                 Tint = Color.Red,
             };

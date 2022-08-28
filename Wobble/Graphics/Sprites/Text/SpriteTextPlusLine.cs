@@ -11,31 +11,15 @@ namespace Wobble.Graphics.Sprites.Text
 {
     public class SpriteTextPlusLine : Sprite
     {
-        /// <summary>
-        ///     The underlying text rendering component.
-        /// </summary>
-        private SpriteTextPlusLineRaw[] raw = Array.Empty<SpriteTextPlusLineRaw>();
+        // /// <summary>
+        // ///     The underlying text rendering component.
+        // /// </summary>
+        // private SpriteTextPlusLineRaw[] raw = Array.Empty<SpriteTextPlusLineRaw>();
 
         /// <summary>
         ///     Whether the cached texture needs to be refreshed.
         /// </summary>
         private bool _dirty;
-
-        /// <summary>
-        ///     Current WindowManager scale.
-        /// </summary>
-        private float _scale;
-        internal float Scale
-        {
-            get => _scale;
-            set
-            {
-                if (_scale == value)
-                    return;
-
-                _scale = value;
-            }
-        }
 
         // todo: fix this to properly display inner text.
         
@@ -65,8 +49,8 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="size"></param>
         public SpriteTextPlusLine(SpriteTextPlusLineRaw[] components = null)
         {
-            _scale = GetScale();
-
+            SetChildrenAlpha = true;
+            
             if (components != null)
                 SetComponents(components);
 
@@ -82,32 +66,17 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="components"></param>
         public void SetComponents(SpriteTextPlusLineRaw[] components)
         {
-            // Clean up old components
-            for (int i = 0; i < raw.Length; i++)
-                raw[i].Destroy();
+            // // Clean up old components
+            // for (int i = 0; i < raw.Length; i++)
+            //     raw[i].Destroy();
 
-            // todo: reconsider storage in array if stored as children?
-            
             for (int i = 0; i < components.Length; i++)
                 components[i].Parent = this;
             
-            raw = components;
+            // raw = components;
         }
         
-        /// <summary>
-        ///     Get the current WindowManager scale and check that it's valid.
-        /// </summary>
-        /// <returns></returns>
-        internal static float GetScale()
-        {
-            var scale = WindowManager.ScreenScale.X;
-            Debug.Assert(scale > 0, "You're setting up text too early (WindowManager.ScreenScale.X is 0).");
-
-            if (GameBase.Game.Graphics.PreferredBackBufferWidth < 1600)
-                return scale * 2;
-
-            return scale;
-        }
+        
 
         /// <summary>
         ///     Set the component size taking rounding into account.
@@ -115,9 +84,9 @@ namespace Wobble.Graphics.Sprites.Text
         private void SetSize()
         {
             float width = 0, height = 0;
-            for (int i = 0; i < raw.Length; i++)
+            for (int i = 0; i < Children.Count; i++)
             {
-                var rawSprite = raw[i];
+                var rawSprite = Children[i];
                 
                 // Round the size the same way it will be rounded during rendering.
                 var (rawWidth, rawHeight) = rawSprite.AbsoluteSize;
@@ -139,8 +108,6 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="gameTime"></param>
         public override void Update(GameTime gameTime)
         {
-            Scale = GetScale();
-
             if (_dirty)
             {
                 _dirty = false;
@@ -206,9 +173,9 @@ namespace Wobble.Graphics.Sprites.Text
             }
             
             int width = 0, height = 0;
-            for (int i = 0; i < raw.Length; i++)
+            for (int i = 0; i < Children.Count; i++)
             {
-                var rawSprite = raw[i];
+                var rawSprite = Children[i];
                 
                 // Round the size the same way it will be rounded during rendering.
                 var (rawWidth, rawHeight) = rawSprite.AbsoluteSize;

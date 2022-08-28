@@ -73,13 +73,20 @@ namespace Wobble.Tests
             if (!BitmapFontFactory.CustomFonts.ContainsKey("exo2-medium"))
                 BitmapFontFactory.AddFont("exo2-medium", GameBase.Game.Resources.Get("Wobble.Tests.Resources/Fonts/exo2-medium.ttf"));
 
-            var font = new WobbleFontStore(20, GameBase.Game.Resources.Get("Wobble.Tests.Resources/Fonts/exo2-semibold.ttf"), new Dictionary<string, byte[]>()
+            var semibold = new WobbleFontStore(20, GameBase.Game.Resources.Get("Wobble.Tests.Resources/Fonts/exo2-semibold.ttf"), new Dictionary<string, byte[]>()
                 {
                     {"Emoji", GameBase.Game.Resources.Get("Wobble.Tests.Resources/Fonts/symbola-emoji.ttf")},
                     {"Japanese", GameBase.Game.Resources.Get("Wobble.Tests.Resources/Fonts/droid-sans-japanese.ttf")}
                 });
+            
+            var regular = new WobbleFontStore(20, GameBase.Game.Resources.Get("Wobble.Tests.Resources/Fonts/exo2-regular.ttf"), new Dictionary<string, byte[]>()
+            {
+                {"Emoji", GameBase.Game.Resources.Get("Wobble.Tests.Resources/Fonts/symbola-emoji.ttf")},
+                {"Japanese", GameBase.Game.Resources.Get("Wobble.Tests.Resources/Fonts/droid-sans-japanese.ttf")}
+            });
 
-            FontManager.CacheWobbleFont("exo2-semibold", font);
+            FontManager.CacheWobbleFont("exo2-semibold", semibold);
+            FontManager.CacheWobbleFont("exo2-regular", regular);
 
             IsReadyToUpdate = true;
 
