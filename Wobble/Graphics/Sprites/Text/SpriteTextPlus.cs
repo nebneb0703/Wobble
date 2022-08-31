@@ -61,7 +61,6 @@ namespace Wobble.Graphics.Sprites.Text
                     return;
 
                 _rawText = value ?? "";
-                FormatText();
                 RefreshText();
             }
         }
@@ -135,6 +134,8 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="cache"></param>
         public SpriteTextPlus(WobbleFontStore font, string text, int size = 0, bool cache = true, TextFormatter formatter = null)
         {
+            // todo: add done flag to not refresh text so many times.
+            
             if (formatter != null)
                 Formatter = formatter;
 
@@ -145,19 +146,36 @@ namespace Wobble.Graphics.Sprites.Text
             FontSize = size == 0 ? Font.DefaultSize : size;
             SetChildrenAlpha = true;
         }
-
         /// <summary>
-        ///     (Re)Format the raw text into fragments.
+        ///     Format the raw text into fragments.
         /// </summary>
         private void FormatText()
         {
             Fragments = Formatter.Format(RawText);
-        }
 
+            var builder = new StringBuilder();
+            BuildText(builder, Fragments);
+
+            _text = builder.ToString();
+        }
+        
+        private void BuildText(StringBuilder builder, IEnumerable<TextFragment> fragments)
+        {
+            foreach(TextFragment fragment in fragments)
+            {
+                if (fragment is PlainTextFragment text)
+                    builder.Append(text.DisplayText);
+                else if(fragment.Inner.Count > 0)
+                    BuildText(builder, fragment.Inner);
+            }
+        }
+        
         /// <summary>
         /// </summary>
         private void RefreshText()
         {
+            FormatText();
+            
             for (var i = Children.Count - 1; i >= 0; i--)
                 Children[i].Destroy();
             

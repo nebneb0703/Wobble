@@ -152,8 +152,8 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                 if (newLineIndex == 0)
                 {
                     // Empty line, skip
-                    int _splitIndex = 0;
-                    Split(current, ref _splitIndex);
+                    int _splitIndex = 1;
+                    Split(current, ref _splitIndex, false);
                     
                     parent.Font.Store.Size = parent.FontSize;
                     height += parent.Font.Store.GetLineHeight();
@@ -170,18 +170,17 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                     // Split fragments at this position.
                     // Copy index due to ref.
                     // ref is required for recursion.
-                    int _splitIndex = newLineIndex;
-                    Split(current, ref _splitIndex);
+                    int _splitIndex = newLineIndex + 1;
+                    Split(current, ref _splitIndex, false);
                     
                     // Use substring instead of GetTextRecursive for efficiency
                     line = text.Substring(0, newLineIndex);
 
                     newLineCount++;
                 }
-
-                // todo: rewrite this because there's too much state needed
-                var sprites = CreateSpritesRecursive(parent, current.Value, parent.MaxWidth - currentLineWidth);
-                // todo: yeet this stuff
+                
+                // todo: consider merging this function into here for efficiency
+                var sprites = CreateSpritesRecursive(parent, current.Value);
                 var spriteWidths = sprites.Select(x => x.Width).ToList();
                 var textLengths = sprites.Select(x => x.Text.Length).ToList();
                 var totalFragmentWidth = spriteWidths.Sum();
@@ -383,6 +382,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             parent.Font.Store.Size = parent.FontSize;
             height += currentLineHeight;
             
+            // todo: give sprites their own size overrides
             parent.Size = new ScalableVector2(width, height);
             
             // todo: PostSpriteDraw
@@ -478,7 +478,7 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                 GetTextRecursive(builder, fragment.Inner);
         }
 
-        private List<SpriteTextPlusRaw> CreateSpritesRecursive(SpriteTextPlus parent, TextFragment fragment, float? maxWidth, float currentWidth = 0)
+        private List<SpriteTextPlusRaw> CreateSpritesRecursive(SpriteTextPlus parent, TextFragment fragment)
         {
             if (fragment is PlainTextFragment f)
             {
@@ -494,9 +494,6 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
                         BlendState = BlendState.AlphaBlend
                     }
                 };
-
-                // todo: make sure this is correct
-                currentWidth += sprite.Width;
 
                 return new List<SpriteTextPlusRaw>() { sprite };
             }
@@ -515,9 +512,8 @@ namespace Wobble.Graphics.Sprites.Text.Formatting
             
             while (innerFragment != null)
             {
-                var innerSprites = CreateSpritesRecursive(parent, innerFragment.Value, maxWidth, currentWidth);
+                var innerSprites = CreateSpritesRecursive(parent, innerFragment.Value);
                 
-                // todo: limit to maxWidth if set
                 for(int i = 0; i < innerSprites.Count; i++)
                 {
                     var inner = innerSprites[i];

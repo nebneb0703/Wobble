@@ -11,11 +11,6 @@ namespace Wobble.Graphics.Sprites.Text
 {
     public class SpriteTextPlusLine : Sprite
     {
-        // /// <summary>
-        // ///     The underlying text rendering component.
-        // /// </summary>
-        // private SpriteTextPlusLineRaw[] raw = Array.Empty<SpriteTextPlusLineRaw>();
-
         /// <summary>
         ///     Whether the cached texture needs to be refreshed.
         /// </summary>
@@ -64,16 +59,12 @@ namespace Wobble.Graphics.Sprites.Text
         ///     Set raw components of this line. Assume correct scaling already.
         /// </summary>
         /// <param name="components"></param>
-        public void SetComponents(SpriteTextPlusRaw[] components)
+        private void SetComponents(SpriteTextPlusRaw[] components)
         {
-            // // Clean up old components
-            // for (int i = 0; i < raw.Length; i++)
-            //     raw[i].Destroy();
-
+            // todo: do IRenderer stuff at this stage? before it gets added as a child
+            
             for (int i = 0; i < components.Length; i++)
                 components[i].Parent = this;
-            
-            // raw = components;
         }
         
         
@@ -83,6 +74,7 @@ namespace Wobble.Graphics.Sprites.Text
         /// </summary>
         private void SetSize()
         {
+            // todo: move this to TextFormatter
             float width = 0, height = 0;
             for (int i = 0; i < Children.Count; i++)
             {
@@ -160,6 +152,7 @@ namespace Wobble.Graphics.Sprites.Text
         /// <param name="gameTime"></param>
         private void Cache(GameTime gameTime)
         {
+            // todo: move caching into Raw ?
             if (IsDisposed)
                 return;
 
@@ -193,8 +186,6 @@ namespace Wobble.Graphics.Sprites.Text
                 return;
             }
 
-            // todo: fix this.
-            
             Visible = true;
 
             if (RenderTarget != null && !RenderTarget.IsDisposed)
